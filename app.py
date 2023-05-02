@@ -1,26 +1,55 @@
-from transformers import pipeline
+from potassium import Potassium, Request, Response
+
+from InstructorEmbedding import INSTRUCTOR
 import torch
+import time
 
-# Init is ran on server startup
-# Load your model to GPU as a global variable here using the variable name "model"
+app = Potassium("my_app")
+
+
+# @app.init runs at startup, and initializes the app's context
+@app.init
 def init():
-    global model
-    
     device = 0 if torch.cuda.is_available() else -1
-    model = pipeline('fill-mask', model='bert-base-uncased', device=device)
+    MODEL_NAME = "hkunlp/instructor-large"
 
-# Inference is ran for every server call
-# Reference your preloaded global model variable here.
-def inference(model_inputs:dict) -> dict:
-    global model
+    model = INSTRUCTOR(MODEL_NAME)
 
-    # Parse out your arguments
-    prompt = model_inputs.get('prompt', None)
-    if prompt == None:
-        return {'message': "No prompt provided"}
-    
-    # Run the model
-    result = model(prompt)
+    context = {"model": model}
 
-    # Return the results as a dictionary
-    return result
+    return context
+
+
+# @app.handler is an http post handler running for every call
+@app.handler()
+def handler(context: dict, request: Request) -> Response:
+    model = context.get("model")
+
+    # Start timer
+    t_1 = time.time()
+
+    # This allows for batched inference
+    text_instruction_pairs = request.json.get("text_instruction_pairs")
+
+    # postprocess
+    texts_with_instructions = []
+    for pair in text_instruction_pairs:
+        texts_with_instructions.append([pair["instruction"], pair["text"]])
+
+    # calculate embeddings
+    customized_embeddings = model.encode(texts_with_instructions).tolist()
+
+    t_2 = time.time()
+
+    return Response(
+        json={
+            "customized_embeddings": customized_embeddings,
+            "text_instruction_pairs": text_instruction_pairs,
+            "inference_time": t_2 - t_1,
+        },
+        status=200,
+    )
+
+
+if __name__ == "__main__":
+    app.serve()
