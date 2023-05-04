@@ -1,0 +1,42 @@
+{
+    "name": "Instructor-Embeddings-Large",
+    "category": "Natural Language",
+    "example_input": {
+        "text_instruction_pairs": [
+            {
+                "text": "Once upon a time....",
+                "instruction": "summarize the document"
+            },
+            {
+                "text": "My fellow americans....",
+                "instruction": "summarize the document"
+            }
+        ]
+    },
+    "example_output": {
+        "customized_embeddings": [
+            [
+                0.1,
+                0.2,
+                0.3
+            ],
+            [
+                0.4,
+                0.5,
+                0.6
+            ]
+        ],
+        "text_instruction_pairs": [
+            {
+                "text": "Once upon a time....",
+                "instruction": "summarize the document"
+            },
+            {
+                "text": "My fellow americans....",
+                "instruction": "summarize the document"
+            }
+        ],
+        "inference_time": 0.6
+    },
+    "version": "1"
+}
